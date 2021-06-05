@@ -58,6 +58,7 @@ void connect_disjoint(int a, int b) {
 }
 
 int* Group_Analyse(int len, int* mid) {
+	//mid : Message IDs
 	for(int i=0;i<len;i++) {
 		mails[mid[i]];
 	}
@@ -65,7 +66,7 @@ int* Group_Analyse(int len, int* mid) {
 
 int main(void) {
 	api.init(&n_mails, &n_queries, &mails, &queries);
-
+	
 	for(int i = 0; i < n_queries; i++)
 		if(queries[i].type == expression_match)
 		  api.answer(queries[i].id, NULL, 0);
