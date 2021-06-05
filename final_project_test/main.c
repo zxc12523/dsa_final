@@ -112,6 +112,8 @@ void insert_string(trie_node* root, char* s, int len, int ind, int mail_id) {
 
 // --------------字元索引樹-----------------------
 
+// --------------- Query 1 ----------------------
+
 int *return_string_array(mail m){
 	int **vec, vec_len = 0;
 	int subject_len = strlen(m.subject);
@@ -119,7 +121,7 @@ int *return_string_array(mail m){
 	vec = malloc(50300*sizeof(int));
 }
 
-
+// --------------- Query 1 ----------------------
 
 // -----------------Query 3-----------------------
 int group_num;
