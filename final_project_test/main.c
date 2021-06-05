@@ -5,7 +5,7 @@
 // and 2000 queries for you to debug.
 
 
-//scacasc
+//scacasc qweqweqwe
 
 typedef struct trie_node{
 	/* data */
