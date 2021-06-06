@@ -1,5 +1,6 @@
 #include "api.h"
 #include <stdio.h>
+#include <stdbool.h>
 
 // The testdata only contains the first 100 mails (mail1 ~ mail100)
 // and 2000 queries for you to debug.
@@ -22,67 +23,40 @@ int char_to_int(char c) {
 	else return -1;
 }
 
-// ------------linked list-----------------------
-
-typedef struct ll_node {
-    int val;
-    struct ll_node* pre;
-    struct ll_node* next;
-}ll_node;
-
-ll_node* new_node(int val) {
-    ll_node* newnode = malloc(sizeof(ll_node));
-    newnode->val = val;
-    newnode->pre = newnode->next = NULL;
-    return newnode;
+bool isToken(char c)
+{
+    if(c<='9'&&c>='0')return true;
+    if(c<='z'&&c>='a')return true;
+    if(c<='Z'&&c>='A')return true;
+    return false;
 }
 
-typedef struct Linked_List{
-    ll_node* front;
-    ll_node* back;
-}ll;
-
-ll* new_ll() {
-    ll* newll = malloc(sizeof(ll));
-    newll->front = newll->back = NULL;
-    return newll;
+void add_mail(long long* arr, int arr_size, int mail_id) {
+	int cur = 0;
+	while (cur < arr_size)
+	{
+		if (mail_id > 64) {
+			mail_id -= 64;
+			cur += 1;
+			continue;
+		}
+		else {
+			long long tmp = 0;
+			tmp <<= mail_id;
+			arr[cur] &= tmp;
+			break;
+		}
+	}
+	return;
 }
 
-void ll_push_back(ll* q, int val) {
-    if (q->front == NULL) {
-        q->front = q->back = new_node(val);
-    }
-    else {
-        ll_node* newnode = new_node(val);
-        q->back->next = newnode;
-        newnode->pre = q->back;
-        q->back = newnode;
-    }
-}
-
-int ll_pop_front(ll* q) {
-    int ret;
-    ret = q->front->val;
-    if (q->front == q->back) {
-        free(q->front);
-        q->front = q->back = NULL;
-    }
-    else {
-        q->front = q->front->next;
-        free(q->front->pre);
-        q->front->pre = NULL;
-    }
-    return ret;
-}
-
-// ------------linked list-----------------------
-
-// --------------字元索引樹-----------------------
+// -------------- 字元索引樹 -----------------------
 
 typedef struct trie_node{
 	char c;
 	bool find;
-	ll* possible_mail_id;
+	int array_size;
+	long long* possible_mail_id;
 	struct trie_node** child;
 }trie_node;
 
@@ -92,7 +66,7 @@ trie_node* new_trie_node(char c) {
 	trie_node* newnode = malloc(sizeof(trie_node));
 	newnode->c = c;
 	newnode->find = false;
-	newnode->possible_mail_id = new_ll();
+	newnode->possible_mail_id = calloc(n_mails / 64 + 1, sizeof(long long));
 	newnode->child = calloc(36, sizeof(trie_node));
 	return newnode;
 }
@@ -100,7 +74,7 @@ trie_node* new_trie_node(char c) {
 void insert_string(trie_node* root, char* s, int len, int ind, int mail_id) {
 	if (ind == len - 1) {
 		root->find = true;
-		ll_push_back(root->possible_mail_id, mail_id);
+		add_mail(root->possible_mail_id, root->array_size, mail_id);
 		return;
 	}
 
@@ -110,14 +84,19 @@ void insert_string(trie_node* root, char* s, int len, int ind, int mail_id) {
 	insert_string(root->child[c], s, len, ind+1, mail_id);
 }
 
-ll* search_string(trie_node* root, char* s, int len, int ind) {
-	if (!root) return NULL;
-	else if (ind == len - 1) return root->possible_mail_id;
-	else return search_string(root->child[char_to_int(s[ind])], s, len, ind + 1);
+long long* search_string(trie_node* root, char* s, int len, int ind) {
+	if (!root) {
+		long long* ans = calloc(n_mails / 64 + 1, sizeof(long long));
+		return ans;
+	}
+	else if (ind == len - 1) {
+		return root->possible_mail_id;
+	}
+	return search_string(root->child[char_to_int(s[ind])], s, len, ind + 1);
 }
 
 // --------------字元索引樹-----------------------
-	
+
 // --------------- Query 1 ----------------------
 
 int *return_string_array(mail m){
