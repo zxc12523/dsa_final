@@ -110,8 +110,14 @@ void insert_string(trie_node* root, char* s, int len, int ind, int mail_id) {
 	insert_string(root->child[c], s, len, ind+1, mail_id);
 }
 
-// --------------字元索引樹-----------------------
+ll* search_string(trie_node* root, char* s, int len, int ind) {
+	if (!root) return NULL;
+	else if (ind == len - 1) return root->possible_mail_id;
+	else return search_string(root->child[char_to_int(s[ind])], s, len, ind + 1);
+}
 
+// --------------字元索引樹-----------------------
+	
 // --------------- Query 1 ----------------------
 
 int *return_string_array(mail m){
