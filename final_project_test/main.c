@@ -7,16 +7,123 @@
 // asdfasdf
 //scacasc qweqweqwe
 
-typedef struct trie_node{
-	/* data */
-}node;
-
 
 int n_mails, n_queries;
 mail *mails;
 query *queries;
 
+int char_to_int(char c) {
+	if ('a' <= c && c <= 'z') 
+		return c - 'a';
+	else if ('A' <= c && c <= 'Z')
+		return c - 'A';
+	else if ('0' <= c && c <= '9')
+		return c - '0' + 10;
+	else return -1;
+}
 
+// ------------linked list-----------------------
+
+typedef struct ll_node {
+    int val;
+    struct ll_node* pre;
+    struct ll_node* next;
+}ll_node;
+
+ll_node* new_node(int val) {
+    ll_node* newnode = malloc(sizeof(ll_node));
+    newnode->val = val;
+    newnode->pre = newnode->next = NULL;
+    return newnode;
+}
+
+typedef struct Linked_List{
+    ll_node* front;
+    ll_node* back;
+}ll;
+
+ll* new_ll() {
+    ll* newll = malloc(sizeof(ll));
+    newll->front = newll->back = NULL;
+    return newll;
+}
+
+void ll_push_back(ll* q, int val) {
+    if (q->front == NULL) {
+        q->front = q->back = new_node(val);
+    }
+    else {
+        ll_node* newnode = new_node(val);
+        q->back->next = newnode;
+        newnode->pre = q->back;
+        q->back = newnode;
+    }
+}
+
+int ll_pop_front(ll* q) {
+    int ret;
+    ret = q->front->val;
+    if (q->front == q->back) {
+        free(q->front);
+        q->front = q->back = NULL;
+    }
+    else {
+        q->front = q->front->next;
+        free(q->front->pre);
+        q->front->pre = NULL;
+    }
+    return ret;
+}
+
+// ------------linked list-----------------------
+
+// --------------字元索引樹-----------------------
+
+typedef struct trie_node{
+	char c;
+	bool find;
+	ll* possible_mail_id;
+	struct trie_node** child;
+}trie_node;
+
+trie_node* root;
+
+trie_node* new_trie_node(char c) {
+	trie_node* newnode = malloc(sizeof(trie_node));
+	newnode->c = c;
+	newnode->find = false;
+	newnode->possible_mail_id = new_ll();
+	newnode->child = calloc(36, sizeof(trie_node));
+	return newnode;
+}
+
+void insert_string(trie_node* root, char* s, int len, int ind, int mail_id) {
+	if (ind == len - 1) {
+		root->find = true;
+		ll_push_back(root->possible_mail_id, mail_id);
+		return;
+	}
+
+	int c = char_to_int(s[ind]);
+
+	if (!root->child[c]) root->child[c] = new_trie_node(s[ind]);
+	insert_string(root->child[c], s, len, ind+1, mail_id);
+}
+
+// --------------字元索引樹-----------------------
+
+// --------------- Query 1 ----------------------
+
+int *return_string_array(mail m){
+	int **vec, vec_len = 0;
+	int subject_len = strlen(m.subject);
+	int content_len = strlen(m.content);
+	vec = malloc(50300*sizeof(int));
+}
+
+// --------------- Query 1 ----------------------
+
+// -----------------Query 3-----------------------
 int group_num;
 int group_size;
 int *group_root;
@@ -58,15 +165,17 @@ void connect_disjoint(int a, int b) {
 }
 
 int* Group_Analyse(int len, int* mid) {
-	//mid : Message IDs
 	for(int i=0;i<len;i++) {
 		mails[mid[i]];
 	}
 }
 
+
+// -----------------Query 3-----------------------
+
 int main(void) {
 	api.init(&n_mails, &n_queries, &mails, &queries);
-	
+
 	for(int i = 0; i < n_queries; i++)
 		if(queries[i].type == expression_match)
 		  api.answer(queries[i].id, NULL, 0);
