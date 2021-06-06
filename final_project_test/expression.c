@@ -18,11 +18,17 @@ char allString[4096];
 // }exp;
 typedef struct stack
 {
-    char *data;
+    char **data;
     int top;
 }stack;
+stack tokens;
 
+void st_init(stack *st)
+{
+    st->top=0;
+    st->data=calloc(2048,sizeof(char*));
 
+}
 
 // ==========vector===========
 #define maxlength 100
@@ -46,11 +52,7 @@ vec new_vec()
 void vec_push(vec*v,int value)
 {
     vec *back=v->back;
-    if(value==255)
-    {
-        value++;
-        value--;
-    }
+    
     if(back==NULL)
     {
         back=v;
@@ -81,11 +83,7 @@ void vec_push(vec*v,int value)
 }
 int* vec_at(vec*v,int index)
 {
-    if(index==255)
-    {
-        index++;
-        index--;
-    }
+    // return NULL if the index is out of range
     vec *temp=v;
     while(1)
     {
