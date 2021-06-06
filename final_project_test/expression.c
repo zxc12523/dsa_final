@@ -5,8 +5,11 @@
 eval
 isToken
 */
+
+//long long bitmask
+//
 int StrIndex=0;
-char allString[4096];
+char allString[2048];
 
 // typedef struct expression
 // {
@@ -16,11 +19,26 @@ char allString[4096];
 //     //result{-1:uneval,0:false,1:true}
 //     int result;
 // }exp;
+//==========stack============
 typedef struct stack
 {
-    char *data;
+    char **data;
     int top;
 }stack;
+stack tokens;
+
+void st_init(stack *st)
+{
+    st->top=0;
+    st->data=calloc(2048,sizeof(char*));
+
+}
+//======================
+//===========opQueue=======
+typedef struct opQ
+{
+    char op[2048];
+}opQueue;
 
 
 
@@ -46,11 +64,7 @@ vec new_vec()
 void vec_push(vec*v,int value)
 {
     vec *back=v->back;
-    if(value==255)
-    {
-        value++;
-        value--;
-    }
+    
     if(back==NULL)
     {
         back=v;
@@ -81,11 +95,7 @@ void vec_push(vec*v,int value)
 }
 int* vec_at(vec*v,int index)
 {
-    if(index==255)
-    {
-        index++;
-        index--;
-    }
+    // return NULL if the index is out of range
     vec *temp=v;
     while(1)
     {
@@ -114,8 +124,19 @@ bool isToken(char c)
 
 void parse(char *str)
 {
+    tokens.data[tokens.top++]=allString;
     for(int i=0;str[i]!='\0';i++)
     {
+        if(isToken(str[i]))
+        {
+            allString[StrIndex++]=str[i];
+        }
+        else
+        {
+            allString[StrIndex++]='\0';
+            tokens.data[tokens.top++]=(allString+StrIndex);
+            //addOP(str[i]);
+        }
         
     }
 }
@@ -123,7 +144,7 @@ void parse(char *str)
 int main()
 {
     char testString[20];
-    char *str2=&(testString[8]);
+    char *str2=(testString)+8;
     for(int i=0;i<19;i++)testString[i]='a';
     testString[7]='\0';
     testString[19]='\0';
