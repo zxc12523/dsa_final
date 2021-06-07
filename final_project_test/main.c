@@ -72,7 +72,7 @@ trie_node* new_trie_node(char c) {
 }
 
 void insert_string(trie_node* root, char* s, int len, int ind, int mail_id) {
-	if (ind == len - 1) {
+	if (ind == len) {
 		root->find = true;
 		add_mail(root->possible_mail_id, root->array_size, mail_id);
 		return;
@@ -95,20 +95,94 @@ long long* search_string(trie_node* root, char* s, int len, int ind) {
 	return search_string(root->child[char_to_int(s[ind])], s, len, ind + 1);
 }
 
-// --------------字元索引樹-----------------------
+// -------------- 字元索引樹 -----------------------
+
+
+// -------------- pre process -----------------------
+
+void read_subject_and_content(mail m){
+	int subject_len = strlen(m.subject);
+	int content_len = strlen(m.content);
+	int ind = 0, len = 0;
+	for(int i=0;i<subject_len;i++) {
+		if (isToken(m.subject[i])){
+			len++;
+			if (i == subject_len - 1)
+				insert_string(root, m.subject, len, ind, m.id);
+		}
+		else {
+			if (ind != len)
+				insert_string(root, m.subject, len, ind, m.id);
+			ind = len = len + 1;
+		}
+	}
+	ind = len = 0;
+	for(int i=0;i<content_len;i++) {
+		if (isToken(m.content[i])){
+			len++;
+			if (i == subject_len - 1)
+				insert_string(root, m.content, len, ind, m.id);
+		}
+		else {
+			if (ind != len)
+				insert_string(root, m.content, len, ind, m.id);
+			ind = len = len + 1;
+		}
+	}
+}
+
+void init() {
+	root = new_trie_node('\0');
+	for(int i=0;i<n_mails;i++)
+		read_subject_and_content(mails[i]);
+}
+
+// -------------- pre process -----------------------
+
 
 // --------------- Query 1 ----------------------
 
-int *return_string_array(mail m){
-	int **vec, vec_len = 0;
-	int subject_len = strlen(m.subject);
-	int content_len = strlen(m.content);
-	vec = malloc(50300*sizeof(int));
+int* Expression_Match(mail m) {
+	
 }
 
 // --------------- Query 1 ----------------------
 
 // -----------------Query 3-----------------------
+typedef struct name_trie_node{
+	char c;
+	int number;
+	struct name_trie_node** child;
+}name_trie_node;
+
+name_trie_node* name_root;
+
+name_trie_node* new_name_trie_node(char c) {
+	name_trie_node* newnode = malloc(sizeof(name_trie_node));
+	newnode->c = c;
+	newnode->number = -1;
+	newnode->child = calloc(36, sizeof(name_trie_node));
+	return newnode;
+}
+
+int insert_name(name_trie_node* root, char* s, int len, int ind) {
+	if (ind == len) {
+		if (root->number != -1) {
+			root->number = cur;
+			return cur++;
+		}
+		else {
+			return root->number;
+		}
+	}
+
+	int c = char_to_int(s[ind]);
+	if (!root->child[c]) 
+		root->child[c] = new_name_trie_node(s[ind]);
+	return insert_name(root->child[c], s, len, ind+1);
+}
+
+int cur = 0;
 int group_num;
 int group_size;
 int *group_root;
@@ -116,7 +190,8 @@ int *disjoint_set;
 int *disjoint_set_size;
 
 void disjoint_init(int len) {
-	group_num = group_size = 0;
+	name_root = new_name_trie_node('\0');
+	cur = group_num = group_size = 0;
 	group_root = calloc(len, sizeof(int));
 	disjoint_set = calloc(len, sizeof(int));
 	disjoint_set_size = calloc(len, sizeof(int));
@@ -138,6 +213,7 @@ int find_disjoint_root(int n) {
 }
 
 void connect_disjoint(int a, int b) {
+	if (a == b) return;
     int x = find_disjoint_root(disjoint_set[a]);
     int y = find_disjoint_root(disjoint_set[b]);
 	if (group_root[x] && group_root[y]) group_num -= 1;
@@ -149,12 +225,24 @@ void connect_disjoint(int a, int b) {
 	group_size = max(group_size, disjoint_set_size[y]);
 }
 
-int* Group_Analyse(int len, int* mid) {
-	for(int i=0;i<len;i++) {
-		mails[mid[i]];
-	}
+void free_disjoint_set() {
+	free(name_root);
+	free(group_root);
+	free(disjoint_set);
+	free(disjoint_set_size);
 }
 
+int* Group_Analyse(int len, int* mid) {
+	disjoint_init(len * 2);
+	for(int i=0;i<len;i++) {
+		int a = insert_name(name_root, mails[mid[i]].from, strlen(mails[mid[i]].from), 0);
+		int b = insert_name(name_root, mails[mid[i]].to, strlen(mails[mid[i]].to), 0);
+		connect_disjoint(a, b);
+	}
+	free_disjoint_set();
+	int ans[2] = {group_num, group_size};
+	return ans ;
+}
 
 // -----------------Query 3-----------------------
 
