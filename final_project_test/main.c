@@ -2,6 +2,11 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#define max(a, b) a > b ? a : b
+#define min(a, b) a < b ? a : b
+#define minn -2147483648
+#define swap(type, a, b) {type tmp = a; a = b; b = tmp;}
+
 // The testdata only contains the first 100 mails (mail1 ~ mail100)
 // and 2000 queries for you to debug.
 
@@ -14,7 +19,7 @@ mail *mails;
 query *queries;
 
 int char_to_int(char c) {
-	if ('a' <= c && c <= 'z') 
+	if ('a' <= c && c <= 'z')
 		return c - 'a';
 	else if ('A' <= c && c <= 'Z')
 		return c - 'A';
@@ -143,12 +148,19 @@ void init() {
 // --------------- Query 1 ----------------------
 
 int* Expression_Match(mail m) {
-	
+
 }
 
 // --------------- Query 1 ----------------------
 
 // -----------------Query 3-----------------------
+int cur = 0;
+int group_num;
+int group_size;
+int *group_root;
+int *disjoint_set;
+int *disjoint_set_size;
+
 typedef struct name_trie_node{
 	char c;
 	int number;
@@ -165,29 +177,22 @@ name_trie_node* new_name_trie_node(char c) {
 	return newnode;
 }
 
-int insert_name(name_trie_node* root, char* s, int len, int ind) {
+int insert_name(name_trie_node* name_root, char* s, int len, int ind) {
 	if (ind == len) {
-		if (root->number != -1) {
-			root->number = cur;
+		if (name_root->number != -1) {
+			name_root->number = cur;
 			return cur++;
 		}
 		else {
-			return root->number;
+			return name_root->number;
 		}
 	}
 
 	int c = char_to_int(s[ind]);
-	if (!root->child[c]) 
-		root->child[c] = new_name_trie_node(s[ind]);
-	return insert_name(root->child[c], s, len, ind+1);
+	if (!name_root->child[c])
+		name_root->child[c] = new_name_trie_node(s[ind]);
+	return insert_name(name_root->child[c], s, len, ind+1);
 }
-
-int cur = 0;
-int group_num;
-int group_size;
-int *group_root;
-int *disjoint_set;
-int *disjoint_set_size;
 
 void disjoint_init(int len) {
 	name_root = new_name_trie_node('\0');
@@ -206,7 +211,7 @@ int find_disjoint_root(int n) {
     if (disjoint_set[n] == n) return n;
     else {
 		int next = disjoint_set[n];
-		if (disjoint_set[next] != next) 
+		if (disjoint_set[next] != next)
 			disjoint_set_size[next] -= disjoint_set_size[n];
 		return disjoint_set[n] = find_disjoint_root(disjoint_set[n]);
 	}
@@ -241,17 +246,29 @@ int* Group_Analyse(int len, int* mid) {
 	}
 	free_disjoint_set();
 	int ans[2] = {group_num, group_size};
-	return ans ;
+	return ans;
 }
 
 // -----------------Query 3-----------------------
 
 int main(void) {
+    printf("%d\n", 1);
 	api.init(&n_mails, &n_queries, &mails, &queries);
-
-	for(int i = 0; i < n_queries; i++)
-		if(queries[i].type == expression_match)
-		  api.answer(queries[i].id, NULL, 0);
-
+    printf("%d\n", 2);
+	for(int i = 0; i < n_queries; i++){
+		if (queries[i].type == expression_match){
+			api.answer(queries[i].id, NULL, 0);
+		}
+		if (queries[i].type == find_similar){
+			api.answer(queries[i].id, NULL, 0);
+		}
+		if (queries[i].type == group_analyse){
+			int len = queries[i].data.group_analyse_data.len;
+			int* mid = queries[i].data.group_analyse_data.mids;
+			int* ans = Group_Analyse(len, mid);
+			printf("%d %d %d\n", i, ans[0], ans[1]);
+			api.answer(queries[i].id, ans, 2);
+		}
+	}
   return 0;
 }
