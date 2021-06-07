@@ -1,5 +1,7 @@
 #include "api.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
 
 #define max(a, b) a > b ? a : b
@@ -160,6 +162,7 @@ int group_size;
 int *group_root;
 int *disjoint_set;
 int *disjoint_set_size;
+int query_3_ans[2];
 
 typedef struct name_trie_node{
 	char c;
@@ -179,13 +182,9 @@ name_trie_node* new_name_trie_node(char c) {
 
 int insert_name(name_trie_node* name_root, char* s, int len, int ind) {
 	if (ind == len) {
-		if (name_root->number != -1) {
-			name_root->number = cur;
-			return cur++;
-		}
-		else {
-			return name_root->number;
-		}
+		if (name_root->number == -1) 
+			name_root->number = cur++;
+		return name_root->number;
 	}
 
 	int c = char_to_int(s[ind]);
@@ -237,7 +236,7 @@ void free_disjoint_set() {
 	free(disjoint_set_size);
 }
 
-int* Group_Analyse(int len, int* mid) {
+void Group_Analyse(int len, int* mid) {
 	disjoint_init(len * 2);
 	for(int i=0;i<len;i++) {
 		int a = insert_name(name_root, mails[mid[i]].from, strlen(mails[mid[i]].from), 0);
@@ -245,16 +244,14 @@ int* Group_Analyse(int len, int* mid) {
 		connect_disjoint(a, b);
 	}
 	free_disjoint_set();
-	int ans[2] = {group_num, group_size};
-	return ans;
+	query_3_ans[0] = group_num;
+	query_3_ans[1] = group_size;
 }
 
 // -----------------Query 3-----------------------
 
 int main(void) {
-    printf("%d\n", 1);
 	api.init(&n_mails, &n_queries, &mails, &queries);
-    printf("%d\n", 2);
 	for(int i = 0; i < n_queries; i++){
 		if (queries[i].type == expression_match){
 			api.answer(queries[i].id, NULL, 0);
@@ -265,9 +262,8 @@ int main(void) {
 		if (queries[i].type == group_analyse){
 			int len = queries[i].data.group_analyse_data.len;
 			int* mid = queries[i].data.group_analyse_data.mids;
-			int* ans = Group_Analyse(len, mid);
-			printf("%d %d %d\n", i, ans[0], ans[1]);
-			api.answer(queries[i].id, ans, 2);
+			Group_Analyse(len, mid);
+			api.answer(queries[i].id, query_3_ans, 2);
 		}
 	}
   return 0;
