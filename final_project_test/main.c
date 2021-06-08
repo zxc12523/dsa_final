@@ -20,6 +20,10 @@ int n_mails, n_queries;
 mail *mails;
 query *queries;
 
+
+int *token_num;
+float** similarity;
+
 int char_to_int(char c) {
 	if ('a' <= c && c <= 'z')
 		return c - 'a';
@@ -57,12 +61,57 @@ void add_mail(long long* arr, int arr_size, int mail_id) {
 	return;
 }
 
+// -------------- link list -----------------------
+typedef struct node {
+    int val;
+    struct node* next;
+}node;
+
+node* new_node(int val) {
+    node* newnode = malloc(sizeof(node));
+    newnode->val = val;
+    newnode->next = NULL;
+    return newnode;
+}
+
+typedef struct Linked_List{
+    node* front;
+    node* back;
+}ll;
+
+ll* new_link_list() {
+	ll* new_ll = malloc(sizeof(ll));
+	new_ll->front = new_ll->back = NULL;
+	return new_ll;
+}
+
+void ll_push_back(ll* q, int val) {
+    if (q->front == NULL) {
+        q->front = q->back = new_node(val);
+    }
+    else {
+        node* newnode = new_node(val);
+        q->back->next = newnode;
+        q->back = newnode;
+    }
+}
+
+void ll_traversal(ll* q, int mail_id) {
+	node* cur = q->front;
+	while (cur){
+		similarity[cur->val][mail_id] += 1;
+		cur = cur->next;
+	}
+}
+// -------------- link list -----------------------
+
 // -------------- 字元索引樹 -----------------------
 
 typedef struct trie_node{
 	char c;
 	bool find;
 	int array_size;
+	ll* possible_link_list;
 	long long* possible_mail_id;
 	struct trie_node** child;
 }trie_node;
@@ -73,6 +122,7 @@ trie_node* new_trie_node(char c) {
 	trie_node* newnode = malloc(sizeof(trie_node));
 	newnode->c = c;
 	newnode->find = false;
+	newnode->possible_link_list = new_link_list();
 	newnode->possible_mail_id = calloc(n_mails / 64 + 1, sizeof(long long));
 	newnode->child = calloc(36, sizeof(trie_node));
 	return newnode;
@@ -81,7 +131,12 @@ trie_node* new_trie_node(char c) {
 void insert_string(trie_node* root, char* s, int len, int ind, int mail_id) {
 	if (ind == len) {
 		root->find = true;
-		add_mail(root->possible_mail_id, root->array_size, mail_id);
+		if (root->possible_link_list->back->val != mail_id){
+			token_num[mail_id]++;
+			ll_traversal(root->possible_link_list, mail_id);
+			ll_push_back(root->possible_link_list, mail_id);
+			add_mail(root->possible_mail_id, root->array_size, mail_id);
+		}	
 		return;
 	}
 
@@ -103,98 +158,6 @@ long long* search_string(trie_node* root, char* s, int len, int ind) {
 }
 
 // -------------- 字元索引樹 -----------------------
-
-// -------------- vector string -----------------------
-typedef struct string{
-	int len;
-	char* str;
-}string;
-
-string new_str(char* s, int len, int from) {
-	string* new_string = malloc(sizeof(string));
-	new_string->len = len;
-	new_string->str = malloc((len + 1)* sizeof(int));
-	for(int i=0;i<len;i++) {
-		new_string->str[i] = s[from + i];
-	}
-	new_string->str[len] = '\0';
-	return *new_string;
-}
-
-#define maxlength 100
-typedef struct vector
-{
-    string *data;
-    int now,len;
-    struct vector*next,*prev,*back;
-}vec;
-
-vec new_vec()
-{
-    vec *v=malloc(sizeof(vec));
-    v->data=malloc(maxlength*sizeof(string));
-    v->len=maxlength;v->now=0;
-    v->prev=NULL;v->next=NULL;
-    v->back=NULL;
-    return *v;
-}
-
-void vec_push(vec* v, string s)
-{
-    vec *back=v->back;
-    
-    if(back==NULL)
-    {
-        back=v;
-    }
-    if(back->now<back->len)
-    {
-        back->data[back->now++]=s;
-        return ;
-    }
-    //else
-    int *datatemp=(int*)realloc(back->data,sizeof(int)*(back->len+maxlength));
-    
-    if(datatemp==NULL)
-    {
-        vec next=new_vec();
-        back->next=&next;
-        next.prev=back;
-        v->back=&next;
-        next.data[next.now++]=s;
-    }
-    else
-    {
-        back->data=datatemp;
-        back->len+=maxlength;
-        back->data[back->now++]=s;
-    }
-    datatemp=NULL;
-}
-
-string* vec_at(vec* v, int index)
-{
-    // return NULL if the index is out of range
-    vec *temp=v;
-    while(1)
-    {
-        if(temp==NULL)
-        {
-            return NULL;
-        }
-        if(index<temp->now)
-        {
-            return &(temp->data[index]);
-        }
-        index-=temp->len;
-        temp=temp->next;
-    }
-}
-
-vec* m;
-
-// -------------- vector string -----------------------
-
 // -------------- pre process -----------------------
 
 void decompose_mail(int t, char* s, int len, int mail_id) {
@@ -203,15 +166,11 @@ void decompose_mail(int t, char* s, int len, int mail_id) {
 		if (isToken(s[i])){
 			len++;
 			if (i == len - 1){
-				string tmp = new_str(s, len, ind);
-				vec_push(&m[t], tmp);
 				insert_string(root, s, len, ind, mail_id);
 			}
 		}
 		else {
 			if (ind != len){
-				string tmp = new_str(s, len, ind);
-				vec_push(&m[t], tmp);
 				insert_string(root, s, len, ind, mail_id);
 			}
 			ind = len = len + 1;
@@ -228,12 +187,18 @@ void read_subject_and_content(int t, mail m){
 
 void init() {
 	root = new_trie_node('\0');
-	m = malloc(sizeof(vec));
+	token_num = calloc(n_mails, sizeof(int));
+	similarity = calloc(n_mails, sizeof(float));
 	for(int i=0;i<n_mails;i++){
-		m[i] = new_vec(); 
+		similarity[i] = calloc(n_mails, sizeof(float));
 		read_subject_and_content(i, mails[i]);
 	}
-		
+	for(int i=0;i<n_mails;i++) {
+		for(int j=0;j<i;j++) {
+			similarity[i][j] /= (token_num[i] + token_num[j]);
+			similarity[j][i] = similarity[i][j];
+		}
+	}
 }
 
 // -------------- pre process -----------------------
@@ -248,8 +213,18 @@ int* Expression_Match(mail m) {
 // --------------- Query 1 -----------------------
 
 // --------------- Query 2 -----------------------
+int *query_2_ans;
 
-
+int Find_Similar(int mid, float threshold) {
+	int len = 0;
+	query_2_ans = malloc(n_mails * sizeof(int));
+	for(int i=0;i<n_mails;i++) {
+		if (i != mid && similarity[mid][i] > threshold) {
+			query_2_ans[len++] = i;
+		}
+	}
+	return len;
+}
 
 // --------------- Query 2 -----------------------
 
@@ -355,7 +330,9 @@ int main(void) {
 			api.answer(queries[i].id, NULL, 0);
 		}
 		if (queries[i].type == find_similar){
-			api.answer(queries[i].id, NULL, 0);
+			int len = Find_Similar(queries[i].data.find_similar_data.mid, queries[i].data.find_similar_data.threshold);
+			api.answer(queries[i].id, query_2_ans, len);
+			free(query_2_ans);
 		}
 		if (queries[i].type == group_analyse){
 			int len = queries[i].data.group_analyse_data.len;
