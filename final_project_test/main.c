@@ -104,44 +104,136 @@ long long* search_string(trie_node* root, char* s, int len, int ind) {
 
 // -------------- 字元索引樹 -----------------------
 
+// -------------- vector string -----------------------
+typedef struct string{
+	int len;
+	char* str;
+}string;
+
+string new_str(char* s, int len, int from) {
+	string* new_string = malloc(sizeof(string));
+	new_string->len = len;
+	new_string->str = malloc((len + 1)* sizeof(int));
+	for(int i=0;i<len;i++) {
+		new_string->str[i] = s[from + i];
+	}
+	new_string->str[len] = '\0';
+	return *new_string;
+}
+
+#define maxlength 100
+typedef struct vector
+{
+    string *data;
+    int now,len;
+    struct vector*next,*prev,*back;
+}vec;
+
+vec new_vec()
+{
+    vec *v=malloc(sizeof(vec));
+    v->data=malloc(maxlength*sizeof(string));
+    v->len=maxlength;v->now=0;
+    v->prev=NULL;v->next=NULL;
+    v->back=NULL;
+    return *v;
+}
+
+void vec_push(vec* v, string s)
+{
+    vec *back=v->back;
+    
+    if(back==NULL)
+    {
+        back=v;
+    }
+    if(back->now<back->len)
+    {
+        back->data[back->now++]=s;
+        return ;
+    }
+    //else
+    int *datatemp=(int*)realloc(back->data,sizeof(int)*(back->len+maxlength));
+    
+    if(datatemp==NULL)
+    {
+        vec next=new_vec();
+        back->next=&next;
+        next.prev=back;
+        v->back=&next;
+        next.data[next.now++]=s;
+    }
+    else
+    {
+        back->data=datatemp;
+        back->len+=maxlength;
+        back->data[back->now++]=s;
+    }
+    datatemp=NULL;
+}
+
+string* vec_at(vec* v, int index)
+{
+    // return NULL if the index is out of range
+    vec *temp=v;
+    while(1)
+    {
+        if(temp==NULL)
+        {
+            return NULL;
+        }
+        if(index<temp->now)
+        {
+            return &(temp->data[index]);
+        }
+        index-=temp->len;
+        temp=temp->next;
+    }
+}
+
+vec* m;
+
+// -------------- vector string -----------------------
 
 // -------------- pre process -----------------------
 
-void read_subject_and_content(mail m){
-	int subject_len = strlen(m.subject);
-	int content_len = strlen(m.content);
+void decompose_mail(int t, char* s, int len, int mail_id) {
 	int ind = 0, len = 0;
-	for(int i=0;i<subject_len;i++) {
-		if (isToken(m.subject[i])){
+	for(int i=0;i<len;i++) {
+		if (isToken(s[i])){
 			len++;
-			if (i == subject_len - 1)
-				insert_string(root, m.subject, len, ind, m.id);
+			if (i == len - 1){
+				string tmp = new_str(s, len, ind);
+				vec_push(&m[t], tmp);
+				insert_string(root, s, len, ind, mail_id);
+			}
 		}
 		else {
-			if (ind != len)
-				insert_string(root, m.subject, len, ind, m.id);
-			ind = len = len + 1;
-		}
-	}
-	ind = len = 0;
-	for(int i=0;i<content_len;i++) {
-		if (isToken(m.content[i])){
-			len++;
-			if (i == subject_len - 1)
-				insert_string(root, m.content, len, ind, m.id);
-		}
-		else {
-			if (ind != len)
-				insert_string(root, m.content, len, ind, m.id);
+			if (ind != len){
+				string tmp = new_str(s, len, ind);
+				vec_push(&m[t], tmp);
+				insert_string(root, s, len, ind, mail_id);
+			}
 			ind = len = len + 1;
 		}
 	}
 }
 
+void read_subject_and_content(int t, mail m){
+	int subject_len = strlen(m.subject);
+	int content_len = strlen(m.content);
+	decompose_mail(t, m.subject, subject_len, m.id);
+	decompose_mail(t, m.content, content_len, m.id);
+}
+
 void init() {
 	root = new_trie_node('\0');
-	for(int i=0;i<n_mails;i++)
-		read_subject_and_content(mails[i]);
+	m = malloc(sizeof(vec));
+	for(int i=0;i<n_mails;i++){
+		m[i] = new_vec(); 
+		read_subject_and_content(i, mails[i]);
+	}
+		
 }
 
 // -------------- pre process -----------------------
@@ -153,9 +245,15 @@ int* Expression_Match(mail m) {
 
 }
 
-// --------------- Query 1 ----------------------
+// --------------- Query 1 -----------------------
 
-// -----------------Query 3-----------------------
+// --------------- Query 2 -----------------------
+
+
+
+// --------------- Query 2 -----------------------
+
+// --------------- Query 3 -----------------------
 int cur = 0;
 int group_num;
 int group_size;
