@@ -20,7 +20,6 @@ int n_mails, n_queries;
 mail *mails;
 query *queries;
 
-
 int *token_num;
 float** similarity;
 
@@ -99,7 +98,7 @@ void ll_push_back(ll* q, int val) {
 void ll_traversal(ll* q, int mail_id) {
 	node* cur = q->front;
 	while (cur){
-		similarity[cur->val][mail_id] += 1;
+		similarity[mail_id][cur->val] += 1.0;
 		cur = cur->next;
 	}
 }
@@ -130,13 +129,13 @@ trie_node* new_trie_node(char c) {
 
 void insert_string(trie_node* root, char* s, int len, int ind, int mail_id) {
 	if (ind == len) {
-		root->find = true;
-		if (root->possible_link_list->back->val != mail_id){
+		if (!root->find || root->possible_link_list->back->val != mail_id){
 			token_num[mail_id]++;
 			ll_traversal(root->possible_link_list, mail_id);
 			ll_push_back(root->possible_link_list, mail_id);
 			add_mail(root->possible_mail_id, root->array_size, mail_id);
 		}	
+		root->find = true;
 		return;
 	}
 
@@ -160,12 +159,12 @@ long long* search_string(trie_node* root, char* s, int len, int ind) {
 // -------------- 字元索引樹 -----------------------
 // -------------- pre process -----------------------
 
-void decompose_mail(int t, char* s, int len, int mail_id) {
+void decompose_mail(char* s, int str_len, int mail_id) {
 	int ind = 0, len = 0;
-	for(int i=0;i<len;i++) {
+	for(int i=0;i<str_len;i++) {
 		if (isToken(s[i])){
 			len++;
-			if (i == len - 1){
+			if (i == str_len - 1){
 				insert_string(root, s, len, ind, mail_id);
 			}
 		}
@@ -178,11 +177,11 @@ void decompose_mail(int t, char* s, int len, int mail_id) {
 	}
 }
 
-void read_subject_and_content(int t, mail m){
+void read_subject_and_content(int id, mail m){
 	int subject_len = strlen(m.subject);
 	int content_len = strlen(m.content);
-	decompose_mail(t, m.subject, subject_len, m.id);
-	decompose_mail(t, m.content, content_len, m.id);
+	decompose_mail(m.subject, subject_len, id);
+	decompose_mail(m.content, content_len, id);
 }
 
 void init() {
@@ -195,7 +194,7 @@ void init() {
 	}
 	for(int i=0;i<n_mails;i++) {
 		for(int j=0;j<i;j++) {
-			similarity[i][j] /= (token_num[i] + token_num[j]);
+			similarity[i][j] /= (token_num[i] + token_num[j] - similarity[i][j]);
 			similarity[j][i] = similarity[i][j];
 		}
 	}
@@ -206,9 +205,6 @@ void init() {
 
 // --------------- Query 1 ----------------------
 
-int* Expression_Match(mail m) {
-
-}
 
 // --------------- Query 1 -----------------------
 
