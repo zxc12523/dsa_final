@@ -11,14 +11,10 @@ isToken
 int StrIndex=0;
 char allString[2048];
 
-// typedef struct expression
-// {
-//     //type{0:token 1:operater}
-//     char *data;
-//     int type;
-//     //result{-1:uneval,0:false,1:true}
-//     int result;
-// }exp;
+
+long long eval(char*token);
+
+
 //==========stack============
 typedef struct stack
 {
@@ -35,12 +31,36 @@ void st_init(stack *st)
 }
 //======================
 //===========opQueue=======
-typedef struct opQ
+typedef struct opQueue
 {
     char op[2048];
+    int parlevel[2048];
+    int lv;
+    int end;
+    int start;
 }opQueue;
-
-
+opQueue opQ;
+void Q_init(opQueue *oq)
+{
+    oq->start=1024;
+    oq->end=1024;
+    oq->lv=0;
+}
+int Q_push(opQueue *oq,char c)
+{
+    if(oq->end+1<2048)
+    {
+        oq->parlevel[oq->end]=oq->lv;
+        oq->op[oq->end++]=c;
+    }
+    else
+    {
+        oq->op[oq->end]=c;
+        oq->parlevel[oq->end]=oq->lv;
+        oq->end=0;
+    }
+    if(oq->start+1==oq->end)return 0;
+}
 
 // ==========vector===========
 #define maxlength 100
@@ -112,6 +132,101 @@ int* vec_at(vec*v,int index)
     }
 }
 //========================
+void and(char *t1,char*t2)
+{
+    eval(t1);
+}
+void or(char *t1,char*t2)
+{
+    eval(t1);
+}
+void not(char *t1)
+{
+    eval(t1);
+}
+
+
+void operation(char op)
+{
+    int tem=tokens.top-2;
+    char* c1=tokens.data[tem+1],c2=tokens.data[tem];
+    switch (op)
+    {
+    case '&':
+        and(c1,c2);
+        break;
+    case '|':
+        or(c1,c2);
+        break;
+    case '!':
+        not(c2);
+        break;
+    default:
+        break;
+    }
+    tokens.top--;
+    return ;
+}
+void addOp(opQueue *oq,char c)
+{
+    if(c=='(')
+    {
+        oq->lv+=1;
+        return ;
+    }
+    if(c==')')
+    {
+        oq->lv-=1;
+        return ;
+    }
+    // if(oq->end+1<Max)
+    // {
+    //     oq->parlevel[oq->end]=oq->lv;
+    //     oq->op[oq->end++]=c;
+    // }
+    // else
+    // {
+    //     oq->op[oq->end]=c;
+    //     oq->parlevel[oq->end]=oq->lv;
+    //     oq->end=0;
+    // }
+    if(oq->start+1==oq->end)return ;
+    int start=oq->start;
+    if((level(oq->op[start])<level(c)&&oq->parlevel[start]==oq->lv)||(oq->parlevel[start]<oq->lv))
+    {
+        // oq->start--;
+        // if(oq->start<0)oq->start=Max-1;
+        // oq->op[oq->start]=c;
+        // oq->parlevel[oq->start]=oq->lv;
+        // oq->end--;
+    }
+    else
+    {
+        start=oq->start;
+        int stop=oq->end-1;
+        if(stop<0)stop=2048;
+        do
+        {
+            operation(oq->op[start]);
+            start+=1;
+            if(start>=2048)start=0;
+        }
+        while((start!=stop)&&(oq->parlevel[start]>oq->lv||
+        (oq->parlevel[start]==oq->lv&&level(oq->op[start])>=level(c))));
+        oq->start=start;
+        if((level(oq->op[start])<level(c)&&oq->parlevel[start]==oq->lv)||(oq->parlevel[start]<oq->lv))
+        {
+            start--;
+            if(start<0)start=2048-1;
+            oq->op[start]=c;
+            oq->parlevel[start]=oq->lv;
+            oq->end--;
+        }
+        oq->start=start;
+        if(oq->start==2048)oq->start=0;
+    }
+}
+
 
 
 bool isToken(char c)
