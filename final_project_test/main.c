@@ -198,6 +198,7 @@ void init() {
 			similarity[j][i] = similarity[i][j];
 		}
 	}
+	query_2_ans = malloc(n_mails * sizeof(int));
 }
 
 // -------------- pre process -----------------------
@@ -213,7 +214,6 @@ int *query_2_ans;
 
 int Find_Similar(int mid, float threshold) {
 	int len = 0;
-	query_2_ans = malloc(n_mails * sizeof(int));
 	for(int i=0;i<n_mails;i++) {
 		if (i != mid && similarity[mid][i] > threshold) {
 			query_2_ans[len++] = i;
@@ -321,20 +321,20 @@ void Group_Analyse(int len, int* mid) {
 
 int main(void) {
 	api.init(&n_mails, &n_queries, &mails, &queries);
+	init();
 	for(int i = 0; i < n_queries; i++){
 		if (queries[i].type == expression_match){
-			api.answer(queries[i].id, NULL, 0);
+			//api.answer(queries[i].id, NULL, 0);
 		}
 		if (queries[i].type == find_similar){
 			int len = Find_Similar(queries[i].data.find_similar_data.mid, queries[i].data.find_similar_data.threshold);
 			api.answer(queries[i].id, query_2_ans, len);
-			free(query_2_ans);
 		}
 		if (queries[i].type == group_analyse){
-			int len = queries[i].data.group_analyse_data.len;
-			int* mid = queries[i].data.group_analyse_data.mids;
-			Group_Analyse(len, mid);
-			api.answer(queries[i].id, query_3_ans, 2);
+			// int len = queries[i].data.group_analyse_data.len;
+			// int* mid = queries[i].data.group_analyse_data.mids;
+			// Group_Analyse(len, mid);
+			// api.answer(queries[i].id, query_3_ans, 2);
 		}
 	}
   return 0;
