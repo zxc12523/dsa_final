@@ -18,7 +18,6 @@ typedef struct mail
     char *content;
 }mail;
 
-mail *mails;
 
 mail new_mail(int id) {
 	mail* m = malloc(sizeof(mail));
@@ -197,23 +196,22 @@ void read_subject_and_content(int id, mail m){
 int *query_2_ans;
 
 void init() {
-    FILE* p = fopen("data.txt", "r");
-	mails = malloc(n_mails*sizeof(mail));
-	for(int i=0;i<n_mails;i++) {
-		mails[i] = new_mail(i);
-		fgets(mails[i].from, 100000, p);
-		fgets(mails[i].content, 100000, p);
-		fgets(mails[i].subject, 100000, p);
-		fgets(mails[i].to, 100000, p);
-	}
 	root = new_trie_node('\0');
 	token_num = calloc(n_mails, sizeof(int));
 	similarity = calloc(n_mails, sizeof(float));
-	for(int i=0;i<n_mails;i++){
+    FILE* p = fopen("data.txt", "r");
+	for(int i=0;i<n_mails;i++) {
+		mail mails;
+		mails = new_mail(i);
+		fgets(mails.from, 100000, p);
+		fgets(mails.content, 100000, p);
+		fgets(mails.subject, 100000, p);
+		fgets(mails.to, 100000, p);
 		similarity[i] = calloc(n_mails, sizeof(float));
 		printf("%d\n", i);
-		read_subject_and_content(i, mails[i]);
+		read_subject_and_content(i, mails);
 	}
+
 	printf("read all\n");
 	for(int i=0;i<n_mails;i++) {
 		for(int j=0;j<i;j++) {
@@ -249,9 +247,10 @@ int Find_Similar(int mid, float threshold) {
 
 int main(void) {
 	init();
+	FILE* a = fopen("ans.txt", "w");
 	for(int i=0;i<n_mails;i++) {
 		for(int j=0;j<n_mails;j++) {
-			printf("%f, ", similarity[i][j]);
+			printf("%f ", similarity[i][j]);
 		}
 		printf("\n");
 	}
