@@ -250,7 +250,7 @@ int main(void) {
 	FILE* a = fopen("ans.txt", "w");
 	for(int i=0;i<n_mails;i++) {
 		for(int j=0;j<n_mails;j++) {
-			printf("%f ", similarity[i][j]);
+			printf("%f, ", similarity[i][j]);
 		}
 		printf("\n");
 	}
